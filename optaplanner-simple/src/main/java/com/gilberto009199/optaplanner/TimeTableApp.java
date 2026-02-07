@@ -30,14 +30,14 @@ public class TimeTableApp implements Runnable{
 	public void run() {
 		SolverFactory<TimeTable> solverFactory = SolverFactory.create(
 				new SolverConfig()
-				.withSolutionClass(TimeTable.class)
+				.withSolutionClass( TimeTable.class )
 				.withEntityClasses( Lesson.class )
-				.withConstraintProviderClass(TimeTableConstraintProvider.class)
+				.withConstraintProviderClass( TimeTableConstraintProvider.class )
 				
 				// O resolvedor (solver) roda por apenas 10 segundos neste pequeno conjunto de dados.
 				// É recomendado executar por pelo menos 5 minutos ("5m") em outros casos.
 				
-				.withTerminationSpentLimit(Duration.ofSeconds(10))
+				.withTerminationSpentLimit( Duration.ofSeconds(10) )
 		);
 		
 		
@@ -113,65 +113,118 @@ public class TimeTableApp implements Runnable{
 		  LOGGER.info("========");
 		  List<Room> roomList = timeTable.getRoomList();
 		  List<Lesson> lessonList = timeTable.getLessonList();
-		  Map<Timeslot, Map<Room, List<Lesson>>> lessonMap = lessonList.stream().filter(lesson -> lesson.getTimeslot() != null && lesson.getRoom() !=
-				  null)
-				  .collect(Collectors.groupingBy(Lesson::getTimeslot, Collectors
-				.groupingBy(Lesson::getRoom)));
-				  LOGGER.info("| | " + roomList.stream()
-				  .map(room -> String.format("%-10s", room.getName())).collect
-				(Collectors.joining(" | ")) + " |");
-				  LOGGER.info("|" + "------------|".repeat(roomList.size() + 1));
-				  for (Timeslot timeslot : timeTable.getTimeslotList()) {
-					  List<List<Lesson>> cellList = roomList.stream()
-					  .map(room -> {
-						  Map<Room, List<Lesson>> byRoomMap = lessonMap.get(timeslot);
-						  if (byRoomMap == null) {
+		  var lessonMap = lessonList
+				  .stream()
+				  .filter(lesson -> lesson.getTimeslot() != null && lesson.getRoom() !=  null)
+				  .collect(
+						  Collectors.groupingBy(
+								  Lesson::getTimeslot,
+								  Collectors.groupingBy(Lesson::getRoom)
+						  )
+				 );
+		  
+		  LOGGER
+		  .info("|                 |" + roomList
+				  .stream()
+		  		  .map(room -> String.format(" %-10s ", room.getName()))
+		  		  .collect( Collectors.joining("|") )
+		  + "|" );
+		  
+		  LOGGER
+		  .info("|                 |" + "------------|".repeat(roomList.size()));
+		  
+		  for (Timeslot timeslot : timeTable.getTimeslotList()) {
+			  
+			  var cellList = roomList
+				  .stream()
+				  .map(room -> {
+					  var byRoomMap = lessonMap.get(timeslot);
+					  
+					  if(byRoomMap == null) {
 						  return Collections.<Lesson>emptyList();
-						  }
-						List<Lesson> cellLessonList = byRoomMap.get(room);
-						  if (cellLessonList == null) {
-						  return Collections.<Lesson>emptyList();
-						  }
-						return cellLessonList;
-					  })
-					  .collect(Collectors.toList());
-					  LOGGER.info("| " + String.format("%-10s",
-					  timeslot.getDayOfWeek().toString().substring(0, 3) + " " +
-					timeslot.getStartTime()) + " | "
-					  + cellList.stream().map(cellLessonList -> String.format("%-10s",
-					  cellLessonList.stream().map(Lesson::getSubject).collect
-					(Collectors.joining(", "))))
-					  .collect(Collectors.joining(" | "))
-					  + " |");
-					  LOGGER.info("| | "
-					  + cellList.stream().map(cellLessonList -> String.format("%-10s",
-					  cellLessonList.stream().map(Lesson::getTeacher).collect
-					(Collectors.joining(", "))))
-					  .collect(Collectors.joining(" | "))
-					  + " |");
-					  LOGGER.info("| | "
-					  + cellList.stream().map(cellLessonList -> String.format("%-10s",
-					  cellLessonList.stream().map(Lesson::getStudentGroup)
-					.collect(Collectors.joining(", "))))
-					  .collect(Collectors.joining(" | "))
-					  + " |");
-					  LOGGER.info("|" + "------------|".repeat(roomList.size() + 1));
-				  }
-				  List<Lesson> unassignedLessons = lessonList.stream()
-				  .filter(lesson -> 
-					  lesson.getTimeslot() == null 
-					  || 
-					  lesson.getRoom() ==null
-				  )
-				  .collect(Collectors.toList());
-				  if (!unassignedLessons.isEmpty()) {
-					  LOGGER.info("");
-					  LOGGER.info("Unassigned lessons");
-					  for (Lesson lesson : unassignedLessons) {
-						  LOGGER.info(" " + lesson.getSubject() + " - " + lesson.getTeacher() +
-						" - " + lesson.getStudentGroup());
 					  }
-				  }
+					  
+					  var cellLessonList = byRoomMap.get(room);
+					  
+					  if(cellLessonList == null) {
+						  return Collections.<Lesson>emptyList();
+					  }
+					  
+					  return cellLessonList;
+				  })
+				  .collect(Collectors.toList());
+			  
+			  LOGGER
+			  .info("|   " 
+					  + String.format(
+							" %-10s ", 
+							timeslot.getDayOfWeek().toString().substring(0, 3) + " " + timeslot.getStartTime())
+					  		+ "  | " +
+							cellList
+								.stream()
+					  			.map(cellLessonList -> 
+					  				String.format(
+					  					"%-10s",
+					  					cellLessonList
+					  						.stream()
+					  						.map(Lesson::getSubject)
+					  						.collect(Collectors.joining(", ")
+					  					)
+					  				)
+					  			)
+					  			.collect( Collectors.joining(" | ") )
+					  		+ " |");
+			  
+			  LOGGER.info("|                 | " + 
+					  cellList
+					  .stream()
+			  		  .map(cellLessonList -> 
+			  		  	String.format(
+			  		  			"%-10s",
+			  		  			 cellLessonList
+			  		  			 	.stream()
+			  		  			 	.map(Lesson::getTeacher)
+			  		  			 	.collect(Collectors.joining(", "))
+			  		  	)
+			  		  )
+			  		  .collect( Collectors.joining(" | ") )
+			  + " |");
+			  
+			  LOGGER.info("|                 | "
+			  + cellList
+			  	.stream()
+			  	.map(cellLessonList -> 
+			  		String.format(
+			  				"%-10s",
+			  				cellLessonList
+			  					.stream()
+			  					.map(Lesson::getStudentGroup)
+			  					.collect(Collectors.joining(", "))
+			  		)
+			  	)
+			  .collect(Collectors.joining(" | "))
+			  + " |");
+			  
+			  LOGGER
+			  .info("|-----------------|" + "------------|".repeat(roomList.size()));
+		  }
+		  
+		  List<Lesson> unassignedLessons = lessonList.stream()
+		  .filter(lesson -> 
+			  lesson.getTimeslot() == null 
+			  || 
+			  lesson.getRoom() ==null
+		  )
+		  .collect(Collectors.toList());
+		  
+		  if (!unassignedLessons.isEmpty()) {
+			  LOGGER.info("");
+			  LOGGER.info("Unassigned lessons");
+			  for (Lesson lesson : unassignedLessons) {
+				  LOGGER.info(" " + lesson.getSubject() + " - " + lesson.getTeacher() +
+				" - " + lesson.getStudentGroup());
+			  }
+		  }
 	}
 	
 }
